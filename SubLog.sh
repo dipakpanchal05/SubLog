@@ -153,13 +153,24 @@ echo -e "${BLUE}[4]${NC} ${YELLOW} Extracting subdomains from crt.sh.${NC}"
 echo
 curl -s "https://crt.sh/?q=%.$domain&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u  | sudo tee crtsh.tmp.txt > /dev/null
 
+# Step 5: Find subdomains using Anubis (jldc.me)
+echo
+echo -e "${BLUE}[5]${NC} ${YELLOW} Extracting subdomains from Anubis.${NC}"
+echo
+
+curl -s "https://jldc.me/anubis/subdomains/$domain" \
+| jq -r '.' 2>/dev/null \
+| grep -oE "([a-zA-Z0-9_-]+\.)+$domain" \
+| sort -u \
+| sudo tee anubis.tmp.txt > /dev/null
+
 # Step 5: Make a list of all unique subdomains from the temporary files
 echo -e -n "${BLUE}[5]${NC} ${YELLOW} Combining all subdomains in subdomains.txt${NC}"
 #Combine puredns file depends upon brute variable
 if $brute; then
-    cat sublist3r.tmp.txt subfinder.tmp.txt  puredns.tmp.txt crtsh.tmp.txt| sort | uniq |sudo tee subdomains.txt > /dev/null
+    cat sublist3r.tmp.txt subfinder.tmp.txt  puredns.tmp.txt crtsh.tmp.txt anubis.tmp.txt| sort | uniq |sudo tee subdomains.txt > /dev/null
 else
-    cat sublist3r.tmp.txt subfinder.tmp.txt crtsh.tmp.txt| sort | uniq |sudo tee subdomains.txt > /dev/null
+    cat sublist3r.tmp.txt subfinder.tmp.txt crtsh.tmp.txt anubis.tmp.txt| sort | uniq |sudo tee subdomains.txt > /dev/null
 fi
 echo
 echo -e "${PURPLE}[+]${NC} ${YELLOW} Found subdomains are saved in subdomains.txt.${NC}"
@@ -242,7 +253,7 @@ echo -e "${PURPLE}HTTP accessible subdomains saved to '$HTTP_OUTPUT_FILE'"
 echo -e "HTTPS accessible subdomains saved to '$HTTPS_OUTPUT_FILE'${NC}"
 
 # Cleanup temporary files
-sudo rm -f sublist3r.tmp.txt subfinder.tmp.txt puredns.tmp.txt crtsh.tmp.txt subdomain-port.tmp.txt
+sudo rm -f sublist3r.tmp.txt subfinder.tmp.txt puredns.tmp.txt crtsh.tmp.txt subdomain-port.tmp.txt anubis.tmp.txt
 
 # Step 8: Check if HTTP accessible subdomains redirect to HTTPS
 # Define output file for final HTTP accessible subdomains
